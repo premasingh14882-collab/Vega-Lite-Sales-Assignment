@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Analytics | Professional Assignment</title>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; margin: 0; color: #1e293b; }
+        
+        /* Sexy Header */
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white; padding: 80px 20px; text-align: center;
+        }
+        .header h1 { font-size: 3.5rem; margin: 0; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-fill-color: transparent; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        
+        /* White Section Cards */
+        .card {
+            background: #ffffff; border-radius: 20px; padding: 40px; margin-bottom: 40px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;
+        }
+        .card h2 { color: #2563eb; font-size: 1.8rem; margin-top: 0; }
+        .card p { color: #64748b; margin-bottom: 25px; }
+
+        /* Dark Multiview Section */
+        .dark-chunk {
+            background: #0f172a; color: white; padding: 80px 20px; border-top: 5px solid #38bdf8;
+        }
+        .dark-chunk h2 { text-align: center; font-size: 2.5rem; color: #38bdf8; margin-bottom: 50px; }
+        
+        .vis-center { display: flex; justify-content: center; width: 100%; overflow-x: auto; }
+      /* --- ADDED FOR NAVIGATION --- */
+        html { scroll-behavior: smooth; }
+
+        .sidebar {
+            position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+            width: 60px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px;
+            display: flex; flex-direction: column; align-items: center; padding: 20px 0;
+            z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        .sidebar a {
+            color: white; text-decoration: none; margin: 15px 0;
+            font-weight: bold; font-size: 14px; transition: 0.3s; opacity: 0.6;
+        }
+
+        .sidebar a:hover { opacity: 1; color: #38bdf8; transform: scale(1.2); }
+
+        .badge {
+            display: inline-block; padding: 4px 12px; border-radius: 20px;
+            font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+            margin-bottom: 10px; background: #e0f2fe; color: #0369a1;
+        }
+    </style>
+</head>
+<body>
+    <div id="scroll-progress" style="position: fixed; top: 0; left: 0; width: 0%; height: 4px; background: #38bdf8; z-index: 2000;"></div>
+    <div class="sidebar">
+        <a href="#vis1">01</a> <a href="#vis2">02</a> <a href="#vis3">03</a>
+        <a href="#vis4">04</a> <a href="#vis5">05</a> <a href="#vis6">06</a>
+        <a href="#vis-multi" style="color:#38bdf8">★</a>
+    </div>
+    <div class="header">
+        <h1>Sales Data Masterclass</h1>
+        <p>A high-performance analytical engine for modern business intelligence.</p>
+       <div style="margin-top: 30px;">
+    <a href="sales.csv" download style="padding: 12px 24px; background: #38bdf8; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 800; margin-right: 10px; display: inline-block;">Download CSV</a>
+    <button onclick="window.print()" style="padding: 12px 24px; background: transparent; border: 2px solid #38bdf8; color: #38bdf8; border-radius: 8px; font-weight: 800; cursor: pointer;">Print Report PDF</button>
+</div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>1. Revenue Share by Rep (Donut)</h2>
+            <p>Total sales contribution per representative with interactive hover tooltips.</p>
+            <div id="vis1" class="vis-center"></div>
+        </div>
+
+        <div class="card">
+            <h2>2. Category Trends (Streamgraph)</h2>
+            <p>Visualizing the organic growth of product items over the timeline.</p>
+            <div id="vis2" class="vis-center"></div>
+        </div>
+
+        <div class="card">
+            <h2>3. Order Intensity (Trellis Histogram)</h2>
+            <p>Distribution of units per item. Hover over bars for exact counts. Red line = Mean.</p>
+            <div id="vis3" class="vis-center"></div>
+        </div>
+
+        <div class="card">
+            <h2>4. Regional Clusters (Interactive Bar)</h2>
+            <p>Click a region to highlight performance data clusters.</p>
+            <div id="vis4" class="vis-center"></div>
+        </div>
+
+        <div class="card">
+            <h2>5. Market Efficiency (Scatter Plot)</h2>
+            <p>Analyzing correlation between Unit Cost and quantity. Use scroll-wheel to zoom.</p>
+            <div id="vis5" class="vis-center"></div>
+        </div>
+
+        <div class="card">
+            <h2>6. Performance Density (Heatmap)</h2>
+            <p>Identifying top-performing rep-item pairings through color intensity.</p>
+            <div id="vis6" class="vis-center"></div>
+        </div>
+    </div>
+
+    <div class="dark-chunk">
+        <div class="container">
+            <h2>7. The Master Concatenated Multiview</h2>
+            <div id="vis-multi" class="vis-center"></div>
+        </div>
+    </div>
+
+    <script>
+        // DATA SPECIFICATION: Handling your local sales.csv format precisely
+        const sharedData = {
+            "url": "sales.csv",
+            "format": {
+                "type": "csv",
+                "parse": {
+                    "OrderDate": "date:'%m-%d-%y'", 
+                    "Total": "number",
+                    "Units": "number",
+                    "Unit Cost": "number"
+                }
+            }
+        };
+
+        // INDIVIDUAL SPECIFICATIONS
+        const s1 = {
+            "title": "1. Rep & Total Distribution",
+            "width": 300, "height": 300,
+            "mark": {"type": "arc", "innerRadius": 70, "stroke": "#fff", "tooltip": true},
+            "encoding": {
+                "theta": {"field": "Total", "type": "quantitative", "aggregate": "sum"},
+                "color": {"field": "Rep", "type": "nominal", "scale": {"scheme": "plasma"}},
+                "tooltip": [{"field": "Rep"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
+            }
+        };
+
+        const s2 = {
+            "title": "2. Item Variation Over Time",
+            "width": 550, "height": 300,
+            "mark": {"type": "area", "tooltip": true},
+            "encoding": {
+                "x": {"field": "OrderDate", "timeUnit": "yearmonth", "type": "temporal", "title": "Date"},
+                "y": {"field": "Total", "aggregate": "sum", "stack": "center", "axis": null},
+                "color": {"field": "Item", "type": "nominal", "scale": {"scheme": "set2"}},
+                "tooltip": [{"field": "Item"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
+            }
+        };
+
+        const s3 = {
+            "title": "3. Trellis Units with Mean",
+            "facet": {"field": "Item", "type": "nominal", "columns": 3},
+            "spec": {
+                "width": 140, "height": 140,
+                "layer": [
+                    {
+                        "params": [{"name": "h", "select": {"type": "point", "on": "mouseover"}}],
+                        "mark": {"type": "bar", "cursor": "pointer"},
+                        "encoding": {
+                            "x": {"field": "Units", "bin": true},
+                            "y": {"aggregate": "count"},
+                            "fillOpacity": {"condition": {"param": "h", "value": 1}, "value": 0.4},
+                            "tooltip": [{"field": "Units", "bin": true}, {"aggregate": "count", "title": "Frequency"}]
+                        }
+                    },
+                    {"mark": {"type": "rule", "color": "red", "size": 3}, "encoding": {"x": {"field": "Units", "aggregate": "mean"}}}
+                ]
+            }
+        };
+
+        const s4 = {
+            "title": "4. Regional Revenue",
+            "width": 300, "height": 300,
+            "params": [{"name": "p", "select": {"type": "point", "fields": ["Region"]}}],
+            "mark": {"type": "bar", "cornerRadiusTop": 8, "cursor": "pointer"},
+            "encoding": {
+                "x": {"field": "Region", "type": "nominal", "axis": {"labelAngle": 0}},
+                "y": {"field": "Total", "aggregate": "sum", "type": "quantitative"},
+                "color": {"condition": {"param": "p", "field": "Region"}, "value": "#94a3b8"},
+                "tooltip": [{"field": "Region"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
+            }
+        };
+
+        const s5 = {
+            "title": "5. Cost vs volume",
+            "width": 300, "height": 300,
+            "params": [{"name": "z", "select": "interval", "bind": "scales"}],
+            "mark": {"type": "circle", "size": 100},
+            "encoding": {
+                "x": {"field": "Units", "type": "quantitative"},
+                "y": {"field": "Unit Cost", "type": "quantitative"},
+                "color": {"field": "Item", "type": "nominal"},
+                "tooltip": [{"field": "Item"}, {"field": "Units"}, {"field": "Total", "format": "$,.2f"}]
+            }
+        };
+
+        const s6 = {
+            "title": "6. Sales Density Heatmap",
+            "width": 400, "height": 280,
+            "mark": {"type": "rect", "tooltip": true},
+            "encoding": {
+                "y": {"field": "Rep", "type": "nominal"},
+                "x": {"field": "Item", "type": "nominal"},
+                "color": {"field": "Total", "aggregate": "sum", "scale": {"scheme": "viridis"}},
+                "tooltip": [{"field": "Rep"}, {"field": "Item"}, {"field": "Total", "aggregate": "sum"}]
+            }
+        };
+
+        // MASTER MULTIVIEW CONCATENATION
+        const masterSpec = {
+            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+            "data": sharedData,
+            "vconcat": [
+                { "hconcat": [s1, s4] },
+                { "hconcat": [s2, s5] },
+                s3,
+                s6
+            ],
+            "config": {
+                "background": "transparent",
+                "axis": {"labelColor": "#94a3b8", "titleColor": "#f1f5f9", "gridColor": "#334155"},
+                "legend": {"labelColor": "#94a3b8", "titleColor": "#f1f5f9"},
+                "title": {"color": "#38bdf8", "fontSize": 18, "anchor": "middle"},
+                "header": {"labelColor": "#38bdf8", "titleColor": "#f1f5f9"}
+            }
+        };
+
+        // RENDER LOGIC
+        const opt = { actions: false };
+        const embed = (id, s) => vegaEmbed(id, {...s, "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": sharedData}, opt);
+
+        embed('#vis1', s1);
+        embed('#vis2', s2);
+        embed('#vis3', s3);
+        embed('#vis4', s4);
+        embed('#vis5', s5);
+        embed('#vis6', s6);
+        vegaEmbed('#vis-multi', masterSpec, {actions: true});
+     window.onscroll = function() {
+    let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+    let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    let scrolled = (height > 0) ? (winScroll / height) * 100 : 0;
+    let progBar = document.getElementById("scroll-progress");
+    if (progBar) { 
+        progBar.style.width = scrolled + "%"; 
+    }
+};
+    </script>
+</body>
+</html>
