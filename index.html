@@ -2,261 +2,460 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sales Analytics | Professional Assignment</title>
+    <title>Sales Intelligence Portal — Assignment III</title>
     <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
     <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; margin: 0; color: #1e293b; }
-        
-        /* Sexy Header */
-        .header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            color: white; padding: 80px 20px; text-align: center;
-        }
-        .header h1 { font-size: 3.5rem; margin: 0; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-fill-color: transparent; }
-        
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-        
-        /* White Section Cards */
-        .card {
-            background: #ffffff; border-radius: 20px; padding: 40px; margin-bottom: 40px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;
-        }
-        .card h2 { color: #2563eb; font-size: 1.8rem; margin-top: 0; }
-        .card p { color: #64748b; margin-bottom: 25px; }
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
-        /* Dark Multiview Section */
-        .dark-chunk {
-            background: #0f172a; color: white; padding: 80px 20px; border-top: 5px solid #38bdf8;
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface2: #f1f5f9;
+            --border: #e2e8f0;
+            --accent: #2563eb;      
+            --accent2: #7c3aed;     
+            --accent3: #059669;     
+            --text: #0f172a;        
+            --muted: #475569;       
+            --card-shadow: rgba(0, 0, 0, 0.04);
+            --card-hover: rgba(37, 99, 235, 0.08);
         }
-        .dark-chunk h2 { text-align: center; font-size: 2.5rem; color: #38bdf8; margin-bottom: 50px; }
-        
-        .vis-center { display: flex; justify-content: center; width: 100%; overflow-x: auto; }
-      /* --- ADDED FOR NAVIGATION --- */
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         html { scroll-behavior: smooth; }
+        
+        /* ── TEXT SMOOTHING APPLIED HERE ── */
+        body { 
+            font-family: 'DM Sans', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: 0;
+            background-image: linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 60px 60px; pointer-events: none;
+        }
+
+        #progress {
+            position: fixed; top: 0; left: 0; height: 4px; width: 0%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            z-index: 9999; transition: width 0.1s linear;
+        }
 
         .sidebar {
-            position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
-            width: 60px; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 30px;
-            display: flex; flex-direction: column; align-items: center; padding: 20px 0;
-            z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: fixed; left: 18px; top: 50%; transform: translateY(-50%);
+            z-index: 1000; display: flex; flex-direction: column; gap: 8px; align-items: center;
         }
-
         .sidebar a {
-            color: white; text-decoration: none; margin: 15px 0;
-            font-weight: bold; font-size: 14px; transition: 0.3s; opacity: 0.6;
+            width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 255, 255, 0.9);
+            border: 1px solid var(--border); box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+            color: var(--muted); text-decoration: none; transition: all 0.25s ease;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: var(--accent); color: #fff; border-color: var(--accent);
+            box-shadow: 0 10px 20px var(--card-hover); transform: scale(1.1);
+        }
+        .sidebar .star { color: var(--accent2); font-size: 1.2rem; }
+        .sidebar .star:hover { background: var(--accent2); box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2); }
+
+        .hero { position: relative; z-index: 1; padding: 100px 20px 80px; text-align: center; overflow: hidden; }
+        .hero-label {
+            display: inline-block; font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em;
+            color: var(--accent); text-transform: uppercase; border: 1px solid var(--accent);
+            background: rgba(37, 99, 235, 0.05); padding: 6px 18px; border-radius: 100px; margin-bottom: 24px;
+        }
+        .hero h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.2rem, 5vw, 3.8rem); font-weight: 800; line-height: 1.1; color: var(--text); margin-bottom: 16px; }
+        .hero p { color: var(--muted); font-size: 1.05rem; max-width: 600px; margin: 0 auto 40px; line-height: 1.7; }
+
+        .container { max-width: 1180px; margin: 0 auto; padding: 0 24px 80px; position: relative; z-index: 1; }
+
+        .vis-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 0; margin-bottom: 35px;
+            overflow: hidden; box-shadow: 0 10px 25px var(--card-shadow); transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+        .vis-card:hover { box-shadow: 0 15px 35px var(--card-hover); transform: translateY(-3px); border-color: #bfdbfe; }
+
+        .card-header { padding: 30px 34px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+        .card-header-left { flex: 1; min-width: 260px; }
+
+        /* ── REDUCED AND SMOOTHED TITLES ── */
+        .vis-number {
+            font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700;
+            color: var(--accent); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .vis-title {
+            font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700;
+            color: var(--text); line-height: 1.2; margin-bottom: 10px;
+        }
+        .vis-desc { font-size: 0.95rem; color: var(--muted); line-height: 1.6; max-width: 600px; }
+
+        .insight-box {
+            background: #f1f5f9; border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 20px;
+            font-size: 0.9rem; color: var(--text); line-height: 1.6; max-width: 300px; flex-shrink: 0;
+        }
+        .insight-box strong {
+            display: block; color: var(--accent2); font-family: 'Syne', sans-serif; font-size: 0.8rem;
+            letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; font-weight: 700;
         }
 
-        .sidebar a:hover { opacity: 1; color: #38bdf8; transform: scale(1.2); }
-
-        .badge {
-            display: inline-block; padding: 4px 12px; border-radius: 20px;
-            font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-            margin-bottom: 10px; background: #e0f2fe; color: #0369a1;
+        .interaction-tag {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 700;
+            color: var(--accent3); background: #d1fae5; border-radius: 100px; padding: 5px 14px; margin-top: 12px;
         }
+
+        .vis-body { padding: 20px 34px 34px; display: flex; justify-content: center; overflow-x: auto; }
+
+        .multi-section { background: #f1f5f9; border-top: 1px solid var(--border); padding: 70px 24px; position: relative; z-index: 1; }
+        .section-heading { text-align: center; margin-bottom: 20px; }
+        .section-heading .label { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em; color: var(--accent2); text-transform: uppercase; }
+        .section-heading h2 { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; color: var(--text); margin: 8px 0 10px; }
+        .section-heading p { color: var(--muted); font-size: 1rem; }
+        .multi-center { display: flex; justify-content: center; overflow-x: auto; margin-top: 35px; }
+
+        footer { background: #ffffff; border-top: 1px solid var(--border); padding: 40px 20px; text-align: center; position: relative; z-index: 1; }
+        footer .f-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: var(--text); margin-bottom: 8px; }
+        footer p { color: var(--muted); font-size: 0.9rem; line-height: 1.8; }
+        footer .badge { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 12px; font-weight: 700; font-size: 0.8rem; color: var(--accent); margin: 4px; }
+
+        .vega-embed { width: 100% !important; }
+        .vega-embed summary { display: none !important; }
     </style>
 </head>
 <body>
-    <div id="scroll-progress" style="position: fixed; top: 0; left: 0; width: 0%; height: 4px; background: #38bdf8; z-index: 2000;"></div>
-    <div class="sidebar">
-        <a href="#vis1">01</a> <a href="#vis2">02</a> <a href="#vis3">03</a>
-        <a href="#vis4">04</a> <a href="#vis5">05</a> <a href="#vis6">06</a>
-        <a href="#vis-multi" style="color:#38bdf8">★</a>
-    </div>
-    <div class="header">
-        <h1>Sales Data Masterclass</h1>
-        <p>A high-performance analytical engine for modern business intelligence.</p>
-       <div style="margin-top: 30px;">
-    <a href="sales.csv" download style="padding: 12px 24px; background: #38bdf8; color: #0f172a; text-decoration: none; border-radius: 8px; font-weight: 800; margin-right: 10px; display: inline-block;">Download CSV</a>
-    <button onclick="window.print()" style="padding: 12px 24px; background: transparent; border: 2px solid #38bdf8; color: #38bdf8; border-radius: 8px; font-weight: 800; cursor: pointer;">Print Report PDF</button>
-</div>
-    </div>
 
-    <div class="container">
-        <div class="card">
-            <h2>1. Revenue Share by Rep (Donut)</h2>
-            <p>Total sales contribution per representative with interactive hover tooltips.</p>
-            <div id="vis1" class="vis-center"></div>
-        </div>
+<div id="progress"></div>
 
-        <div class="card">
-            <h2>2. Category Trends (Streamgraph)</h2>
-            <p>Visualizing the organic growth of product items over the timeline.</p>
-            <div id="vis2" class="vis-center"></div>
-        </div>
+<nav class="sidebar">
+    <a href="#s1" title="Donut Chart">01</a>
+    <a href="#s2" title="Streamgraph">02</a>
+    <a href="#s3" title="Trellis Histogram">03</a>
+    <a href="#s4" title="Interactive Bar">04</a>
+    <a href="#s5" title="Scatter Plot">05</a>
+    <a href="#multi" title="Master Dashboard" class="star">★</a>
+</nav>
 
-        <div class="card">
-            <h2>3. Order Intensity (Trellis Histogram)</h2>
-            <p>Distribution of units per item. Hover over bars for exact counts. Red line = Mean.</p>
-            <div id="vis3" class="vis-center"></div>
-        </div>
+<header class="hero">
+    <div class="hero-label">Assignment III · Vega-Lite · IIT Delhi</div>
+    <h1>Sales Intelligence Portal</h1>
+    <p>Interactive visual analytics of sales data across regions, representatives, products, and time.</p>
+</header>
 
-        <div class="card">
-            <h2>4. Regional Clusters (Interactive Bar)</h2>
-            <p>Click a region to highlight performance data clusters.</p>
-            <div id="vis4" class="vis-center"></div>
-        </div>
+<main class="container">
 
-        <div class="card">
-            <h2>5. Market Efficiency (Scatter Plot)</h2>
-            <p>Analyzing correlation between Unit Cost and quantity. Use scroll-wheel to zoom.</p>
-            <div id="vis5" class="vis-center"></div>
+    <div class="vis-card" id="s1">
+        <div class="card-header">
+            <div class="card-header-left">
+                <div class="vis-number">Graph 01</div>
+                <div class="vis-title">Donut Chart: Revenue by Rep</div>
+                <div class="vis-desc">Each arc segment represents one sales representative's share of total revenue. The inner radius creates a donut form, making it easy to compare proportions.</div>
+                <div class="interaction-tag"> Hover over any slice for exact revenue figures</div>
+            </div>
+            <div class="insight-box">
+                <strong> Key Insight</strong>
+                Kivell and Andrews together account for the largest combined revenue share, driven by high-value Desk and Binder orders.
+            </div>
         </div>
-
-        <div class="card">
-            <h2>6. Performance Density (Heatmap)</h2>
-            <p>Identifying top-performing rep-item pairings through color intensity.</p>
-            <div id="vis6" class="vis-center"></div>
-        </div>
+        <div class="vis-body" id="vis1"></div>
     </div>
 
-    <div class="dark-chunk">
-        <div class="container">
-            <h2>7. The Master Concatenated Multiview</h2>
-            <div id="vis-multi" class="vis-center"></div>
+    <div class="vis-card" id="s2">
+        <div class="card-header">
+            <div class="card-header-left">
+                <div class="vis-number">Graph 02</div>
+                <div class="vis-title">Streamgraph: Revenue Over Time</div>
+                <div class="vis-desc">The stacked area chart reveals how each product's total revenue ebbed and flowed across months. Wider bands signal higher sales volume.</div>
+                <div class="interaction-tag"> Scroll-wheel to zoom · Click-drag to pan</div>
+            </div>
+            <div class="insight-box">
+                <strong>Key Insight</strong>
+                Binder sales show strong cyclical peaks — especially in late 2021 and late 2022. Desk items create sharp spikes due to high unit costs.
+            </div>
         </div>
+        <div class="vis-body" id="vis2"></div>
     </div>
 
-    <script>
-        // DATA SPECIFICATION: Handling your local sales.csv format precisely
-        const sharedData = {
-            "url": "sales.csv",
-            "format": {
-                "type": "csv",
-                "parse": {
-                    "OrderDate": "date:'%m-%d-%y'", 
-                    "Total": "number",
-                    "Units": "number",
-                    "Unit Cost": "number"
-                }
+    <div class="vis-card" id="s3">
+        <div class="card-header">
+            <div class="card-header-left">
+                <div class="vis-number">Graph 03</div>
+                <div class="vis-title">Trellis Histogram: Unit Distribution</div>
+                <div class="vis-desc">Each small panel shows the frequency distribution of order quantities. The <span style="color:#ef4444;font-weight:700;">red vertical line</span> marks the mean order size.</div>
+                <div class="interaction-tag"> Hover over any bar to highlight its frequency</div>
+            </div>
+            <div class="insight-box">
+                <strong> Key Insight</strong>
+                Pencil and Binder have highly spread distributions. Desk orders cluster tightly at very low quantities (1–10 units).
+            </div>
+        </div>
+        <div class="vis-body" id="vis3"></div>
+    </div>
+
+    <div class="vis-card" id="s4">
+        <div class="card-header">
+            <div class="card-header-left">
+                <div class="vis-number">Graph 04</div>
+                <div class="vis-title">Bar Chart: Regional Revenue</div>
+                <div class="vis-desc">Compares total revenue generated across East, Central, and West sales regions.</div>
+                <div class="interaction-tag"> Click a bar to highlight that region</div>
+            </div>
+            <div class="insight-box">
+                <strong> Key Insight</strong>
+                Central region dominates in total revenue, reflecting the highest concentration of sales reps and volume.
+            </div>
+        </div>
+        <div class="vis-body" id="vis4"></div>
+    </div>
+
+    <div class="vis-card" id="s5">
+        <div class="card-header">
+            <div class="card-header-left">
+                <div class="vis-number">Graph 05</div>
+                <div class="vis-title">Scatter Plot: Efficiency Correlation</div>
+                <div class="vis-desc">Each point is a transaction. This reveals whether expensive items sell in low quantities and cheap items in bulk.</div>
+                <div class="interaction-tag"> Scroll to zoom · Drag to pan · Hover for details</div>
+            </div>
+            <div class="insight-box">
+                <strong> Key Insight</strong>
+                Clear negative correlation: Desk and Pen Set items cluster at high cost + low units. Pencils cluster at very low cost with high unit counts.
+            </div>
+        </div>
+        <div class="vis-body" id="vis5"></div>
+    </div>
+
+</main>
+
+<section class="multi-section" id="multi">
+    <div class="section-heading">
+        <div class="label">Assignment Requirement · Concatenated Multiview</div>
+        <h2>Graph 06: Master Dashboard</h2>
+        <p>All 5 numbered visualizations combined in a single synchronized Vega-Lite layout.</p>
+    </div>
+    <div class="multi-center" id="vis-multi"></div>
+</section>
+
+<footer>
+    <div class="f-title">Assignment III · Visualizing Tables using Vega-Lite</div>
+    <p>
+        <span class="badge">Vega-Lite v5</span>
+        <span class="badge">IIT Delhi</span>
+        <span class="badge">April 2026</span>
+    </p>
+    <p style="margin-top:16px;">Submitted by: <strong style="color:#0f172a; font-weight: 700;">KRISHNA MOHAN SINGH</strong> · 2025EET2477</p>
+</footer>
+
+<script>
+const rawCSV = `OrderDate,Region,Rep,Item,Units,Unit Cost,Total
+1-6-21,East,Jones,Pencil,95,1.99,189.05
+1-23-21,Central,Kivell,Binder,50,19.99,999.5
+2-9-21,Central,Jardine,Pencil,36,4.99,179.64
+2-26-21,Central,Gill,Pen,27,19.99,539.73
+3-15-21,West,Sorvino,Pencil,56,2.99,167.44
+4-1-21,East,Jones,Binder,60,4.99,299.4
+4-18-21,Central,Andrews,Pencil,75,1.99,149.25
+5-5-21,Central,Jardine,Pencil,90,4.99,449.1
+5-22-21,West,Thompson,Pencil,32,1.99,63.68
+6-8-21,East,Jones,Binder,60,8.99,539.4
+6-25-21,Central,Morgan,Pencil,90,4.99,449.1
+7-12-21,East,Howard,Binder,29,1.99,57.71
+7-29-21,East,Parent,Binder,81,19.99,1619.19
+8-15-21,East,Jones,Pencil,35,4.99,174.65
+9-1-21,Central,Smith,Desk,2,125.0,250.0
+9-18-21,East,Jones,Pen Set,16,15.99,255.84
+10-5-21,Central,Morgan,Binder,28,8.99,251.72
+10-22-21,East,Jones,Pen,64,8.99,575.36
+11-8-21,East,Parent,Pen,15,19.99,299.85
+11-25-21,Central,Kivell,Pen Set,96,4.99,479.04
+12-12-21,Central,Smith,Pencil,67,1.29,86.43
+12-29-21,East,Parent,Pen Set,74,15.99,1183.26
+1-15-22,Central,Gill,Binder,46,8.99,413.54
+2-1-22,Central,Smith,Binder,87,15.0,1305.0
+2-18-22,East,Jones,Binder,4,4.99,19.96
+3-7-22,West,Sorvino,Binder,7,19.99,139.93
+3-24-22,Central,Jardine,Pen Set,50,4.99,249.5
+4-10-22,Central,Andrews,Pencil,66,1.99,131.34
+4-27-22,East,Howard,Pen,96,4.99,479.04
+5-14-22,Central,Gill,Pencil,53,1.29,68.37
+5-31-22,Central,Gill,Binder,80,8.99,719.2
+6-17-22,Central,Kivell,Desk,5,125.0,625.0
+7-4-22,East,Jones,Pen Set,62,4.99,309.38
+7-21-22,Central,Morgan,Pen Set,55,12.49,686.95
+8-7-22,Central,Kivell,Pen Set,42,23.95,1005.9
+8-24-22,West,Sorvino,Desk,3,275.0,825.0
+9-10-22,Central,Gill,Pencil,7,1.29,9.03
+9-27-22,West,Sorvino,Pen,76,1.99,151.24
+10-14-22,West,Thompson,Binder,57,19.99,1139.43
+10-31-22,Central,Andrews,Pencil,14,1.29,18.06
+11-17-22,Central,Jardine,Binder,11,4.99,54.89
+12-4-22,Central,Jardine,Binder,94,19.99,1879.06
+12-21-22,Central,Andrews,Binder,28,4.99,139.72`;
+
+const data = {
+    values: rawCSV,
+    format: { type: "csv", parse: { OrderDate: "date:'%m-%d-%y'", Total: "number", Units: "number", "Unit Cost": "number" } }
+};
+
+const SCHEME = "tableau10";
+
+// ─────────────────────────────────────────────
+// VEGA CONFIG (REDUCED SIZES & SMOOTHER FONTS)
+// ─────────────────────────────────────────────
+const sharedConfig = {
+    background: "transparent",
+    view: { stroke: "transparent" },
+    title: { color: "#0f172a", fontSize: 16, font: "Syne", anchor: "start", offset: 15, fontWeight: 700 },
+    axis: { labelColor: "#475569", titleColor: "#0f172a", gridColor: "#e2e8f0", labelFontSize: 12, titleFontSize: 13, titleFontWeight: 600 },
+    legend: { labelColor: "#475569", titleColor: "#0f172a", labelFontSize: 12, titleFontSize: 13, symbolSize: 100, titleFontWeight: 600 },
+    header: { labelColor: "#475569", titleColor: "#2563eb", labelFontSize: 13, titleFontSize: 14, titleFontWeight: 700 }
+};
+
+// ─────────────────────────────────────────────
+// VIS 1 · DONUT
+// ─────────────────────────────────────────────
+const s1 = {
+    title: "Graph 1: Donut Chart — Revenue by Rep",
+    width: 300, height: 300,
+    layer: [
+        {
+            mark: { type: "arc", innerRadius: 80, outerRadius: 140, stroke: "#fff", strokeWidth: 2, tooltip: true },
+            encoding: {
+                theta: { field: "Total", type: "quantitative", aggregate: "sum" },
+                color: { field: "Rep", type: "nominal", scale: { scheme: SCHEME } },
+                opacity: { value: 0.95 },
+                tooltip: [{ field: "Rep", title: "Sales Rep" }, { field: "Total", aggregate: "sum", format: "$,.2f", title: "Revenue" }]
             }
-        };
+        },
+        {
+            mark: { type: "text", radius: 0, fontSize: 14, fontWeight: 700, color: "#0f172a", font: "Syne" },
+            encoding: { text: { value: "Revenue\nShare" } }
+        }
+    ]
+};
 
-        // INDIVIDUAL SPECIFICATIONS
-        const s1 = {
-            "title": "1. Rep & Total Distribution",
-            "width": 300, "height": 300,
-            "mark": {"type": "arc", "innerRadius": 70, "stroke": "#fff", "tooltip": true},
-            "encoding": {
-                "theta": {"field": "Total", "type": "quantitative", "aggregate": "sum"},
-                "color": {"field": "Rep", "type": "nominal", "scale": {"scheme": "plasma"}},
-                "tooltip": [{"field": "Rep"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
-            }
-        };
-
-        const s2 = {
-            "title": "2. Item Variation Over Time",
-            "width": 550, "height": 300,
-            "mark": {"type": "area", "tooltip": true},
-            "encoding": {
-                "x": {"field": "OrderDate", "timeUnit": "yearmonth", "type": "temporal", "title": "Date"},
-                "y": {"field": "Total", "aggregate": "sum", "stack": "center", "axis": null},
-                "color": {"field": "Item", "type": "nominal", "scale": {"scheme": "set2"}},
-                "tooltip": [{"field": "Item"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
-            }
-        };
-
-        const s3 = {
-            "title": "3. Trellis Units with Mean",
-            "facet": {"field": "Item", "type": "nominal", "columns": 3},
-            "spec": {
-                "width": 140, "height": 140,
-                "layer": [
-                    {
-                        "params": [{"name": "h", "select": {"type": "point", "on": "mouseover"}}],
-                        "mark": {"type": "bar", "cursor": "pointer"},
-                        "encoding": {
-                            "x": {"field": "Units", "bin": true},
-                            "y": {"aggregate": "count"},
-                            "fillOpacity": {"condition": {"param": "h", "value": 1}, "value": 0.4},
-                            "tooltip": [{"field": "Units", "bin": true}, {"aggregate": "count", "title": "Frequency"}]
-                        }
-                    },
-                    {"mark": {"type": "rule", "color": "red", "size": 3}, "encoding": {"x": {"field": "Units", "aggregate": "mean"}}}
-                ]
-            }
-        };
-
-        const s4 = {
-            "title": "4. Regional Revenue",
-            "width": 300, "height": 300,
-            "params": [{"name": "p", "select": {"type": "point", "fields": ["Region"]}}],
-            "mark": {"type": "bar", "cornerRadiusTop": 8, "cursor": "pointer"},
-            "encoding": {
-                "x": {"field": "Region", "type": "nominal", "axis": {"labelAngle": 0}},
-                "y": {"field": "Total", "aggregate": "sum", "type": "quantitative"},
-                "color": {"condition": {"param": "p", "field": "Region"}, "value": "#94a3b8"},
-                "tooltip": [{"field": "Region"}, {"field": "Total", "aggregate": "sum", "format": "$,.2f"}]
-            }
-        };
-
-        const s5 = {
-            "title": "5. Cost vs volume",
-            "width": 300, "height": 300,
-            "params": [{"name": "z", "select": "interval", "bind": "scales"}],
-            "mark": {"type": "circle", "size": 100},
-            "encoding": {
-                "x": {"field": "Units", "type": "quantitative"},
-                "y": {"field": "Unit Cost", "type": "quantitative"},
-                "color": {"field": "Item", "type": "nominal"},
-                "tooltip": [{"field": "Item"}, {"field": "Units"}, {"field": "Total", "format": "$,.2f"}]
-            }
-        };
-
-        const s6 = {
-            "title": "6. Sales Density Heatmap",
-            "width": 400, "height": 280,
-            "mark": {"type": "rect", "tooltip": true},
-            "encoding": {
-                "y": {"field": "Rep", "type": "nominal"},
-                "x": {"field": "Item", "type": "nominal"},
-                "color": {"field": "Total", "aggregate": "sum", "scale": {"scheme": "viridis"}},
-                "tooltip": [{"field": "Rep"}, {"field": "Item"}, {"field": "Total", "aggregate": "sum"}]
-            }
-        };
-
-        // MASTER MULTIVIEW CONCATENATION
-        const masterSpec = {
-            "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-            "data": sharedData,
-            "vconcat": [
-                { "hconcat": [s1, s4] },
-                { "hconcat": [s2, s5] },
-                s3,
-                s6
-            ],
-            "config": {
-                "background": "transparent",
-                "axis": {"labelColor": "#94a3b8", "titleColor": "#f1f5f9", "gridColor": "#334155"},
-                "legend": {"labelColor": "#94a3b8", "titleColor": "#f1f5f9"},
-                "title": {"color": "#38bdf8", "fontSize": 18, "anchor": "middle"},
-                "header": {"labelColor": "#38bdf8", "titleColor": "#f1f5f9"}
-            }
-        };
-
-        // RENDER LOGIC
-        const opt = { actions: false };
-        const embed = (id, s) => vegaEmbed(id, {...s, "$schema": "https://vega.github.io/schema/vega-lite/v5.json", "data": sharedData}, opt);
-
-        embed('#vis1', s1);
-        embed('#vis2', s2);
-        embed('#vis3', s3);
-        embed('#vis4', s4);
-        embed('#vis5', s5);
-        embed('#vis6', s6);
-        vegaEmbed('#vis-multi', masterSpec, {actions: true});
-     window.onscroll = function() {
-    let winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    let height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    let scrolled = (height > 0) ? (winScroll / height) * 100 : 0;
-    let progBar = document.getElementById("scroll-progress");
-    if (progBar) { 
-        progBar.style.width = scrolled + "%"; 
+// ─────────────────────────────────────────────
+// VIS 2 · STREAMGRAPH
+// ─────────────────────────────────────────────
+const s2 = {
+    title: "Graph 2: Streamgraph — Revenue Over Time",
+    width: 750, height: 260,
+    params: [{ name: "grid", select: { type: "interval", encodings: ["x"] }, bind: "scales" }],
+    mark: { type: "area", tooltip: true, interpolate: "monotone" },
+    encoding: {
+        x: { field: "OrderDate", timeUnit: "yearmonth", type: "temporal", title: "Month", axis: { labelAngle: -30 } },
+        y: { field: "Total", aggregate: "sum", stack: "center", axis: null },
+        color: { field: "Item", type: "nominal", scale: { scheme: SCHEME } },
+        tooltip: [{ field: "Item", title: "Product" }, { field: "OrderDate", timeUnit: "yearmonth", title: "Month", type: "temporal" }, { field: "Total", aggregate: "sum", format: "$,.2f", title: "Revenue" }]
     }
 };
-    </script>
+
+// ─────────────────────────────────────────────
+// VIS 3 · TRELLIS HISTOGRAM
+// ─────────────────────────────────────────────
+const s3 = {
+    title: "Graph 3: Trellis Histogram — Unit Distribution",
+    facet: { field: "Item", type: "nominal", columns: 3 },
+    spec: {
+        width: 160, height: 130,
+        layer: [
+            {
+                params: [{ name: "hover", select: { type: "point", on: "mouseover" } }],
+                mark: { type: "bar", cursor: "pointer", binSpacing: 2, cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 },
+                encoding: {
+                    x: { field: "Units", bin: { maxbins: 8 }, title: "Units Sold per Order" },
+                    y: { aggregate: "count", title: "Number of Orders" },
+                    color: { field: "Item", type: "nominal", scale: { scheme: SCHEME }, legend: null },
+                    fillOpacity: { condition: { param: "hover", value: 1 }, value: 0.6 },
+                    tooltip: [{ field: "Item", title: "Product" }, { field: "Units", bin: true, title: "Unit Range" }, { aggregate: "count", title: "Order Count" }]
+                }
+            },
+            {
+                mark: { type: "rule", color: "#ef4444", size: 2, strokeDash: [4, 2] },
+                encoding: { x: { field: "Units", aggregate: "mean" }, tooltip: [{ field: "Units", aggregate: "mean", format: ".1f", title: "Mean Units" }] }
+            }
+        ]
+    }
+};
+
+// ─────────────────────────────────────────────
+// VIS 4 · INTERACTIVE BAR
+// ─────────────────────────────────────────────
+const s4 = {
+    title: "Graph 4: Bar Chart — Regional Revenue",
+    width: 300, height: 300,
+    params: [{ name: "sel", select: { type: "point", fields: ["Region"] } }],
+    mark: { type: "bar", cornerRadiusTopLeft: 6, cornerRadiusTopRight: 6, cursor: "pointer" },
+    encoding: {
+        x: { field: "Region", type: "nominal", sort: "-y", title: "Region", axis: { labelAngle: 0 } },
+        y: { field: "Total", aggregate: "sum", type: "quantitative", title: "Total Revenue ($)", axis: { format: "$,.0f" } },
+        color: { condition: { param: "sel", field: "Region", type: "nominal", scale: { scheme: SCHEME } }, value: "#2563eb", legend: null },
+        opacity: { condition: { param: "sel", value: 1 }, value: 0.25 },
+        tooltip: [{ field: "Region", title: "Region" }, { field: "Total", aggregate: "sum", format: "$,.2f", title: "Total Revenue" }, { aggregate: "count", title: "# Transactions" }]
+    }
+};
+
+// ─────────────────────────────────────────────
+// VIS 5 · SCATTER
+// ─────────────────────────────────────────────
+const s5 = {
+    title: "Graph 5: Scatter Plot — Efficiency Correlation",
+    width: 300, height: 300,
+    params: [{ name: "zoom", select: "interval", bind: "scales" }],
+    mark: { type: "circle", opacity: 0.85 },
+    encoding: {
+        x: { field: "Units", type: "quantitative", title: "Units Sold" },
+        y: { field: "Unit Cost", type: "quantitative", scale: { type: "log" }, title: "Unit Cost (log $)", axis: { format: "$,.2f" } },
+        color: { field: "Item", type: "nominal", scale: { scheme: SCHEME } },
+        size: { field: "Total", type: "quantitative", scale: { range: [60, 500] }, legend: null },
+        tooltip: [{ field: "Item", title: "Product" }, { field: "Rep", title: "Sales Rep" }, { field: "Units", title: "Units" }, { field: "Unit Cost", format: "$,.2f", title: "Unit Cost" }, { field: "Total", format: "$,.2f", title: "Total Revenue" }]
+    }
+};
+
+// ─────────────────────────────────────────────
+// MASTER MULTIVIEW
+// ─────────────────────────────────────────────
+const master = {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    data,
+    title: { text: "Graph 6: Master Dashboard — All 5 Views Combined", color: "#7c3aed", fontSize: 20, font: "Syne", anchor: "middle", offset: 25, fontWeight: 700 },
+    vconcat: [
+        { hconcat: [s1, s4, s5], spacing: 30 },
+        { hconcat: [s2], spacing: 30 },
+        s3
+    ]
+};
+
+// RENDER
+const OPT = { actions: false, renderer: "canvas" };
+const withData = s => ({ ...s, $schema: "https://vega.github.io/schema/vega-lite/v5.json", data, config: sharedConfig });
+
+vegaEmbed('#vis1', withData(s1), OPT);
+vegaEmbed('#vis2', withData(s2), OPT);
+vegaEmbed('#vis3', withData(s3), OPT);
+vegaEmbed('#vis4', withData(s4), OPT);
+vegaEmbed('#vis5', withData(s5), OPT);
+vegaEmbed('#vis-multi', { ...master, config: sharedConfig }, { ...OPT, actions: true });
+
+// Scroll Logic
+const links = document.querySelectorAll('.sidebar a');
+window.addEventListener('scroll', () => {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    document.getElementById('progress').style.width = (scrollY / h * 100) + '%';
+
+    links.forEach(a => {
+        const target = document.querySelector(a.getAttribute('href'));
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
+        a.classList.toggle('active', rect.top <= 200 && rect.bottom > 0);
+    });
+});
+</script>
 </body>
 </html>
